@@ -8,33 +8,10 @@ import {
 	POST_EDIT_DIAGNOSTICS_WIDGET_KEY,
 	syncPostEditDiagnosticsWidget,
 } from "./lsp/post-edit-diagnostics.js";
-import {
-	renderDiagnosticsCall,
-	renderDiagnosticsResult,
-	renderFindReferencesCall,
-	renderFindReferencesResult,
-	renderGotoDefinitionCall,
-	renderGotoDefinitionResult,
-	renderPrepareRenameCall,
-	renderPrepareRenameResult,
-	renderRenameCall,
-	renderRenameResult,
-	renderSymbolsCall,
-	renderSymbolsResult,
-} from "./lsp/renderers/index.js";
-import type { ResultLike } from "./lsp/renderers/shared.js";
 import { AUTO_INSTALLABLE_SERVERS, BUILTIN_SERVERS, LSP_INSTALL_HINTS } from "./lsp/server-definitions.js";
 import { getAllServers } from "./lsp/server-resolution.js";
-import { type LspDiagnosticsDetails, lsp_diagnostics } from "./lsp/tools/diagnostics.js";
-import { type LspFindReferencesDetails, lsp_find_references } from "./lsp/tools/find-references.js";
-import { type LspGotoDefinitionDetails, lsp_goto_definition } from "./lsp/tools/goto-definition.js";
-import {
-	type LspPrepareRenameDetails,
-	type LspRenameDetails,
-	lsp_prepare_rename,
-	lsp_rename,
-} from "./lsp/tools/rename.js";
-import { type LspSymbolsDetails, lsp_symbols } from "./lsp/tools/symbols.js";
+import { registerAllTools } from "./lsp/tool-registry.js";
+import { lsp_diagnostics } from "./lsp/tools/diagnostics.js";
 
 const STATUS_KEY = "pi-lsp";
 
@@ -78,47 +55,7 @@ export interface PostEditToolResultRegistrar {
 export default function (pi: ExtensionAPI): void {
 	const manager = getLspManager();
 
-	pi.registerTool({
-		...lsp_diagnostics,
-		renderCall: (args, theme) => renderDiagnosticsCall(args as never, theme),
-		renderResult: (result, options, theme) =>
-			renderDiagnosticsResult(result as ResultLike<LspDiagnosticsDetails>, options, theme),
-	});
-
-	pi.registerTool({
-		...lsp_goto_definition,
-		renderCall: (args, theme) => renderGotoDefinitionCall(args as never, theme),
-		renderResult: (result, options, theme) =>
-			renderGotoDefinitionResult(result as ResultLike<LspGotoDefinitionDetails>, options, theme),
-	});
-
-	pi.registerTool({
-		...lsp_find_references,
-		renderCall: (args, theme) => renderFindReferencesCall(args as never, theme),
-		renderResult: (result, options, theme) =>
-			renderFindReferencesResult(result as ResultLike<LspFindReferencesDetails>, options, theme),
-	});
-
-	pi.registerTool({
-		...lsp_symbols,
-		renderCall: (args, theme) => renderSymbolsCall(args as never, theme),
-		renderResult: (result, options, theme) =>
-			renderSymbolsResult(result as ResultLike<LspSymbolsDetails>, options, theme),
-	});
-
-	pi.registerTool({
-		...lsp_prepare_rename,
-		renderCall: (args, theme) => renderPrepareRenameCall(args as never, theme),
-		renderResult: (result, options, theme) =>
-			renderPrepareRenameResult(result as ResultLike<LspPrepareRenameDetails>, options, theme),
-	});
-
-	pi.registerTool({
-		...lsp_rename,
-		renderCall: (args, theme) => renderRenameCall(args as never, theme),
-		renderResult: (result, options, theme) =>
-			renderRenameResult(result as ResultLike<LspRenameDetails>, options, theme),
-	});
+	registerAllTools(pi);
 
 	const updateStatus = (ctx: ExtensionContext): void => {
 		const snapshots = manager.getSnapshot();
