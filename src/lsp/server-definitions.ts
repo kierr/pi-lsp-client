@@ -84,8 +84,8 @@ export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
 	},
 	gopls: { command: ["gopls"], extensions: [".go"] },
 	"ruby-lsp": {
-		command: ["rubocop", "--lsp"],
-		extensions: [".rb", ".rake", ".gemspec", ".ru"],
+		command: ["ruby-lsp"],
+		extensions: [".rb", ".rake", ".gemspec", ".ru", ".erb"],
 	},
 	basedpyright: {
 		command: ["basedpyright-langserver", "--stdio"],

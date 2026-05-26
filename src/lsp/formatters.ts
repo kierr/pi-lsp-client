@@ -6,9 +6,7 @@ import type {
 	DocumentSymbol,
 	Location,
 	LocationLink,
-	PrepareRenameDefaultBehavior,
 	PrepareRenameResult,
-	Range,
 	SeverityFilter,
 	SymbolInfo,
 } from "./types.js";
@@ -89,9 +87,7 @@ export function filterDiagnosticsBySeverity(diagnostics: Diagnostic[], severityF
 	return diagnostics.filter((d) => d.severity === targetSeverity);
 }
 
-export function formatPrepareRenameResult(
-	result: PrepareRenameResult | PrepareRenameDefaultBehavior | Range | null,
-): string {
+export function formatPrepareRenameResult(result: PrepareRenameResult | null): string {
 	if (!result) return "Cannot rename at this position";
 
 	if ("defaultBehavior" in result) {

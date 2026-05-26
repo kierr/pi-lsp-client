@@ -3,7 +3,7 @@ import { Type } from "typebox";
 
 import { withLspClient } from "../client-wrapper.js";
 import { formatApplyResult, formatPrepareRenameResult } from "../formatters.js";
-import type { PrepareRenameDefaultBehavior, PrepareRenameResult, Range, WorkspaceEdit } from "../types.js";
+import type { PrepareRenameResult, WorkspaceEdit } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
 import { type ApplyResult, applyWorkspaceEdit } from "../workspace-edit.js";
 
@@ -24,7 +24,7 @@ export interface LspPrepareRenameDetails {
 	filePath: string;
 	line: number;
 	character: number;
-	result: PrepareRenameResult | PrepareRenameDefaultBehavior | Range | null;
+	result: PrepareRenameResult | null;
 	error?: string;
 	errorKind?: "missing_dependency";
 }
@@ -47,7 +47,7 @@ export const lsp_prepare_rename = defineTool({
 	parameters: PrepareParams,
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 		try {
-			const result = await withLspClient<PrepareRenameResult | PrepareRenameDefaultBehavior | Range | null>(
+			const result = await withLspClient<PrepareRenameResult | null>(
 				params.filePath,
 				async (client) => client.prepareRename(params.filePath, params.line, params.character),
 				"prepareRename",

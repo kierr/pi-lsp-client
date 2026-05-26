@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { DiagnosticSeverity, SymbolKind } from "vscode-languageserver-protocol";
 
 import {
 	filterDiagnosticsBySeverity,
@@ -88,10 +89,26 @@ describe("formatSymbolKind", () => {
 
 describe("filterDiagnosticsBySeverity", () => {
 	const diagnostics = [
-		{ range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, severity: 1, message: "e" },
-		{ range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, severity: 2, message: "w" },
-		{ range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, severity: 3, message: "i" },
-		{ range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } }, severity: 4, message: "h" },
+		{
+			range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+			severity: DiagnosticSeverity.Error,
+			message: "e",
+		},
+		{
+			range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+			severity: DiagnosticSeverity.Warning,
+			message: "w",
+		},
+		{
+			range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+			severity: DiagnosticSeverity.Information,
+			message: "i",
+		},
+		{
+			range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+			severity: DiagnosticSeverity.Hint,
+			message: "h",
+		},
 	];
 
 	function firstDiagnostic(result: ReturnType<typeof filterDiagnosticsBySeverity>) {
@@ -140,7 +157,7 @@ describe("formatDiagnostic", () => {
 		// given
 		const diag = {
 			range: { start: { line: 9, character: 4 }, end: { line: 9, character: 10 } },
-			severity: 1,
+			severity: DiagnosticSeverity.Error,
 			source: "ts",
 			code: "TS2322",
 			message: "Type mismatch",
@@ -224,13 +241,13 @@ describe("formatDocumentSymbol", () => {
 		// given
 		const symbol = {
 			name: "Foo",
-			kind: 5,
+			kind: SymbolKind.Class,
 			range: { start: { line: 0, character: 0 }, end: { line: 4, character: 0 } },
 			selectionRange: { start: { line: 0, character: 0 }, end: { line: 0, character: 3 } },
 			children: [
 				{
 					name: "bar",
-					kind: 6,
+					kind: SymbolKind.Method,
 					range: { start: { line: 1, character: 2 }, end: { line: 2, character: 0 } },
 					selectionRange: { start: { line: 1, character: 2 }, end: { line: 1, character: 5 } },
 				},
@@ -251,7 +268,7 @@ describe("formatSymbolInfo", () => {
 		// given
 		const symbol = {
 			name: "method",
-			kind: 6,
+			kind: SymbolKind.Method,
 			location: {
 				uri: "file:///x.ts",
 				range: { start: { line: 0, character: 0 }, end: { line: 0, character: 5 } },

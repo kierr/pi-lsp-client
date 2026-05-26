@@ -9,9 +9,7 @@ import type {
 	DocumentSymbol,
 	Location,
 	LocationLink,
-	PrepareRenameDefaultBehavior,
 	PrepareRenameResult,
-	Range,
 	SymbolInfo,
 	WorkspaceEdit,
 } from "./types.js";
@@ -142,20 +140,13 @@ export class LspClient extends LspClientConnection {
 		return { items: this.getStoredDiagnostics(uri) };
 	}
 
-	async prepareRename(
-		filePath: string,
-		line: number,
-		character: number,
-	): Promise<PrepareRenameResult | PrepareRenameDefaultBehavior | Range | null> {
+	async prepareRename(filePath: string, line: number, character: number): Promise<PrepareRenameResult | null> {
 		const absPath = resolve(filePath);
 		await this.openFile(absPath);
-		return this.sendRequest<PrepareRenameResult | PrepareRenameDefaultBehavior | Range | null>(
-			"textDocument/prepareRename",
-			{
-				textDocument: { uri: pathToFileURL(absPath).href },
-				position: { line: line - 1, character },
-			},
-		);
+		return this.sendRequest<PrepareRenameResult | null>("textDocument/prepareRename", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			position: { line: line - 1, character },
+		});
 	}
 
 	async rename(filePath: string, line: number, character: number, newName: string): Promise<WorkspaceEdit | null> {

@@ -40,7 +40,8 @@
 		"typebox": "*"
 	},
 	"dependencies": {
-		"vscode-jsonrpc": "^8.2.1"
+		"vscode-jsonrpc": "^8.2.1",
+		"vscode-languageserver-protocol": "^3.17.5"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.3.5",
