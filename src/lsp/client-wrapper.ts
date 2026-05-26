@@ -93,6 +93,19 @@ const READ_ONLY_RETRY_TOOLS = new Set([
 	"documentSymbols",
 	"workspaceSymbols",
 	"prepareRename",
+	// New read-only tools — retry on dead connections
+	"hover",
+	"completion",
+	"signatureHelp",
+	"documentLink",
+	"codeLens",
+	"inlayHints",
+	"semanticTokens",
+	"typeHierarchy",
+	// RubyLSP custom — read-only
+	"showSyntaxTree",
+	"workspaceDependencies",
+	"discoverTests",
 ]);
 
 export async function withLspClient<T>(
