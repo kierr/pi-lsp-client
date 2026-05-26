@@ -83,10 +83,11 @@ puts sample.greet
 `;
 
 beforeAll(async () => {
-	// Create a temp dir with a .git marker so findWorkspaceRoot works
+	// Create a temp dir with a .git marker so findWorkspaceRoot works.
+	// NOTE: No Gemfile — ruby-lsp requires a Gemfile.lock if a Gemfile is present,
+	// so we skip it and let ruby-lsp operate in standalone mode.
 	tmpDir = mkdirSync(join(tmpdir(), "pi-lsp-integ-"), { recursive: true }) ?? "";
 	writeFileSync(join(tmpDir, ".git"), "");
-	writeFileSync(join(tmpDir, "Gemfile"), `source "https://rubygems.org"\ngem "ruby-lsp"\n`);
 	SAMPLE_RB = join(tmpDir, SAMPLE_RB_NAME);
 	writeFileSync(SAMPLE_RB, FIXTURE_CODE);
 
