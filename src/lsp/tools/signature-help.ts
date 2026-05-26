@@ -1,7 +1,7 @@
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { withLspClient } from "../client-wrapper.js";
+import { withSemanticFallback } from "../client-wrapper.js";
 import type { SignatureHelp, SignatureInformation } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
 
@@ -53,7 +53,7 @@ export const lsp_signature_help = defineTool({
 	parameters: Params,
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 		try {
-			const result = await withLspClient<SignatureHelp | null>(
+			const result = await withSemanticFallback<SignatureHelp | null>(
 				params.filePath,
 				async (client) => client.signatureHelp(params.filePath, params.line, params.character),
 				"signatureHelp",

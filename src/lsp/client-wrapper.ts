@@ -10,8 +10,8 @@ import {
 	LspServerLookupError,
 } from "./errors.js";
 import { getLspManager, type LspManager } from "./manager.js";
-import { findServerForExtension } from "./server-resolution.js";
-import type { ServerLookupResult } from "./types.js";
+import { findCompanionServer, findServerForExtension } from "./server-resolution.js";
+import type { ResolvedServer, ServerLookupResult } from "./types.js";
 
 const WORKSPACE_MARKERS = [".git", "package.json", "pyproject.toml", "Cargo.toml", "go.mod", "pom.xml", "build.gradle"];
 
@@ -84,6 +84,8 @@ export function formatServerLookupError(result: Exclude<ServerLookupResult, { st
 export interface WithLspClientOptions {
 	signal?: AbortSignal;
 	manager?: LspManager;
+	/** Skip server resolution and use this server directly. Used by withSemanticFallback for companion servers. */
+	serverOverride?: ResolvedServer;
 }
 
 const READ_ONLY_RETRY_TOOLS = new Set([
@@ -124,12 +126,20 @@ export async function withLspClient<T>(
 	}
 
 	const ext = extname(absPath);
-	const result = findServerForExtension(ext);
-	if (result.status !== "found") {
-		throw new LspServerLookupError(formatServerLookupError(result));
+
+	// When serverOverride is provided, skip server resolution entirely.
+	// This is used by withSemanticFallback to route requests to companion servers.
+	let server: ResolvedServer;
+	if (options.serverOverride) {
+		server = options.serverOverride;
+	} else {
+		const result = findServerForExtension(ext);
+		if (result.status !== "found") {
+			throw new LspServerLookupError(formatServerLookupError(result));
+		}
+		server = result.server;
 	}
 
-	const server = result.server;
 	const root = findWorkspaceRoot(absPath);
 	const manager = options.manager ?? getLspManager();
 
@@ -156,4 +166,50 @@ export async function withLspClient<T>(
 	};
 
 	return acquireAndCall(true);
+}
+
+/**
+ * Semantic fallback: try the primary server first, then fall back to its
+ * companion server if the primary returns null.
+ *
+ * Use this for tools that query semantic information (hover, completion,
+ * definition, signature help, code actions). In Sorbet-typed Ruby projects,
+ * ruby-lsp intentionally returns null for these and delegates to sorbet.
+ *
+ * For non-null results (success or error), the primary's response is returned
+ * directly — no fallback is attempted.
+ */
+export async function withSemanticFallback<T>(
+	filePath: string,
+	fn: (client: LspClient) => Promise<T>,
+	toolName: string,
+	options: WithLspClientOptions = {},
+): Promise<T> {
+	const absPath = resolve(filePath);
+	const ext = extname(absPath);
+
+	// Step 1: Try primary server (resolved by extension).
+	const primaryResult = await withLspClient<T>(filePath, fn, toolName, options);
+
+	// Only attempt fallback when primary returned null — not on errors or non-null results.
+	// `null` is the LSP convention for "I don't handle this request".
+	if (primaryResult !== null) return primaryResult;
+
+	// Step 2: Look up companion for the primary server.
+	const lookup = findServerForExtension(ext);
+	if (lookup.status !== "found") return primaryResult;
+
+	const companion = findCompanionServer(lookup.server.id, ext);
+	if (!companion) return primaryResult;
+
+	// Step 3: Try companion server.
+	try {
+		return await withLspClient<T>(filePath, fn, toolName, {
+			...options,
+			serverOverride: companion,
+		});
+	} catch {
+		// Companion failed (not installed, crashed, etc.) — return primary's null.
+		return primaryResult;
+	}
 }

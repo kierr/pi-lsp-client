@@ -43,6 +43,7 @@ export const LSP_INSTALL_HINTS: Record<string, string> = {
 	"haskell-language-server": "ghcup install hls",
 	bash: "npm install -g bash-language-server",
 	"kotlin-ls": "See https://github.com/Kotlin/kotlin-lsp",
+	sorbet: "gem install sorbet; or add sorbet-static to your Gemfile",
 };
 
 export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
@@ -148,6 +149,19 @@ export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
 		extensions: [".hs", ".lhs"],
 	},
 	"kotlin-ls": { command: ["kotlin-lsp"], extensions: [".kt", ".kts"] },
+	// Sorbet typechecker LSP. ruby-lsp delegates semantic features (hover,
+	// completion, definition, signature help, code actions) to this server when
+	// sorbet-static is in the Gemfile. Registered as a companion — see COMPANION_SERVERS.
+	sorbet: { command: ["srb", "tc", "--lsp"], extensions: [".rb", ".rake"] },
+};
+
+// Maps a primary server ID to a companion server ID. When the primary returns
+// null for a semantic request (hover, completion, definition, etc.), the client
+// falls back to the companion server. This enables ruby-lsp → sorbet delegation
+// for Sorbet-typed Ruby projects where ruby-lsp intentionally returns null for
+// semantic features when sorbet-static is detected in the Gemfile.
+export const COMPANION_SERVERS: Record<string, string> = {
+	"ruby-lsp": "sorbet",
 };
 
 export const AUTO_INSTALLABLE_SERVERS: Record<string, string[]> = {

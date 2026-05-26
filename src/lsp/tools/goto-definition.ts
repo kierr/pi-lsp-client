@@ -1,7 +1,7 @@
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { withLspClient } from "../client-wrapper.js";
+import { withSemanticFallback } from "../client-wrapper.js";
 import { formatLocation } from "../formatters.js";
 import type { Location, LocationLink } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
@@ -28,7 +28,7 @@ export const lsp_goto_definition = defineTool({
 	parameters: Params,
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 		try {
-			const result = await withLspClient<Location | LocationLink | Array<Location | LocationLink> | null>(
+			const result = await withSemanticFallback<Location | LocationLink | Array<Location | LocationLink> | null>(
 				params.filePath,
 				async (client) => client.definition(params.filePath, params.line, params.character),
 				"definition",

@@ -98,6 +98,11 @@ export class LspClientTransport {
 		this.connection.onRequest("client/registerCapability", () => null);
 		this.connection.onRequest("window/workDoneProgress/create", () => null);
 
+		// Sorbet LSP sends $/progress and window/logMessage during typechecking.
+		// Swallow them — we don't surface indexing progress to the agent.
+		this.connection.onNotification("$/progress", () => {});
+		this.connection.onNotification("window/logMessage", () => {});
+
 		this.connection.onClose(() => {
 			this.processExited = true;
 		});

@@ -1,7 +1,7 @@
 import { getDisabledServerIds, getMergedServers } from "./config-loader.js";
-import { BUILTIN_SERVERS, LSP_INSTALL_HINTS } from "./server-definitions.js";
+import { BUILTIN_SERVERS, COMPANION_SERVERS, LSP_INSTALL_HINTS } from "./server-definitions.js";
 import { isServerInstalled } from "./server-installation.js";
-import type { ServerLookupResult } from "./types.js";
+import type { ResolvedServer, ServerLookupResult } from "./types.js";
 
 export function findServerForExtension(ext: string): ServerLookupResult {
 	const servers = getMergedServers();
@@ -89,4 +89,37 @@ export function getAllServers(): ServerStatus[] {
 	}
 
 	return result;
+}
+
+/**
+ * Find a companion server for a given primary server + file extension.
+ * Returns null if no companion is defined, not installed, or doesn't support the extension.
+ *
+ * Companions provide semantic features that the primary delegates. For example,
+ * ruby-lsp delegates hover/completion/definition to sorbet when sorbet-static is
+ * in the Gemfile.
+ */
+export function findCompanionServer(primaryServerId: string, ext: string): ResolvedServer | null {
+	const companionId = COMPANION_SERVERS[primaryServerId];
+	if (!companionId) return null;
+
+	// Check user/project config first, then builtins.
+	const servers = getMergedServers();
+	const match = servers.find((s) => s.id === companionId);
+	if (!match) return null;
+
+	// Companion must support the same extension.
+	if (!match.extensions.includes(ext)) return null;
+
+	// Companion must be installed.
+	if (!isServerInstalled(match.command)) return null;
+
+	return {
+		id: match.id,
+		command: match.command,
+		extensions: match.extensions,
+		priority: match.priority,
+		...(match.env !== undefined ? { env: match.env } : {}),
+		...(match.initialization !== undefined ? { initialization: match.initialization } : {}),
+	};
 }

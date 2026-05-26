@@ -1,7 +1,7 @@
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { withLspClient } from "../client-wrapper.js";
+import { withSemanticFallback } from "../client-wrapper.js";
 import type { Hover, MarkupContent } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
 
@@ -41,7 +41,7 @@ export const lsp_hover = defineTool({
 	parameters: Params,
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 		try {
-			const result = await withLspClient<Hover | null>(
+			const result = await withSemanticFallback<Hover | null>(
 				params.filePath,
 				async (client) => client.hover(params.filePath, params.line, params.character),
 				"hover",

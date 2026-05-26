@@ -1,7 +1,7 @@
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { findWorkspaceRoot, withLspClient } from "../client-wrapper.js";
+import { findWorkspaceRoot, withLspClient, withSemanticFallback } from "../client-wrapper.js";
 import { formatApplyResult } from "../formatters.js";
 import type { CodeAction, Command } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
@@ -50,7 +50,7 @@ export const lsp_code_actions = defineTool({
 					? { endLine: params.endLine, endCharacter: params.endCharacter }
 					: undefined;
 
-			const result = await withLspClient<Array<CodeAction | Command> | null>(
+			const result = await withSemanticFallback<Array<CodeAction | Command> | null>(
 				params.filePath,
 				async (client) => client.codeActions(params.filePath, params.line, params.character, range, params.only),
 				"codeActions",
