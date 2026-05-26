@@ -21,6 +21,10 @@ export interface ClientSnapshot {
 	isInitializing: boolean;
 	alive: boolean;
 	command: string[];
+	/** Init result metadata from the LSP server. Undefined before initialization completes. */
+	formatter?: string | undefined;
+	serverVersion?: string | undefined;
+	degradedMode?: boolean | undefined;
 }
 
 export interface LspManagerOptions {
@@ -327,6 +331,9 @@ export class LspManager {
 				isInitializing: managed.isInitializing,
 				alive: managed.client.isAlive(),
 				command: managed.client.command(),
+				formatter: managed.client.formatter,
+				serverVersion: managed.client.serverVersion,
+				degradedMode: (managed.client.degradedMode || undefined) as boolean | undefined,
 			});
 		}
 		return snapshots;

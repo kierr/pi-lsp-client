@@ -74,6 +74,19 @@ export type SeverityFilter = "error" | "warning" | "information" | "hint" | "all
 
 // ── RubyLSP custom types (not in vscode-languageserver-protocol) ──────
 
+/** Typed subset of the LSP initialize response. Fields without consumers are omitted. */
+export interface LspInitializeResult {
+	formatter?: string;
+	degraded_mode?: boolean;
+	serverInfo?: { name?: string; version?: string };
+}
+
+export interface RubyAddon {
+	name: string;
+	errored: boolean;
+	version?: string;
+}
+
 export interface RubyDependency {
 	name: string;
 	version: string;

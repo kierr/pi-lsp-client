@@ -94,6 +94,11 @@ export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
 				inlayHint: { enableAll: true },
 				codeLens: { enableTestCodeLens: true },
 			},
+			// Switches server from old CodeLens-based listeners to TestStyle/SpecStyle
+			// listeners, populating the rubyLsp/discoverTests cache used by lsp_discover_tests.
+			enabledFeatureFlags: {
+				fullTestDiscovery: true,
+			},
 		},
 	},
 	basedpyright: {

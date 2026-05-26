@@ -1,13 +1,18 @@
 import { pathToFileURL } from "node:url";
 
 import { LspClientTransport } from "./transport.js";
+import type { LspInitializeResult } from "./types.js";
 
 const INITIALIZE_SETTLE_MS = 300;
 
 export class LspClientConnection extends LspClientTransport {
+	public formatter?: string | undefined;
+	public serverVersion?: string | undefined;
+	public degradedMode = false;
+
 	async initialize(): Promise<void> {
 		const rootUri = pathToFileURL(this.root).href;
-		await this.sendRequest("initialize", {
+		const result = await this.sendRequest<LspInitializeResult>("initialize", {
 			processId: process.pid,
 			rootUri,
 			rootPath: this.root,
@@ -79,6 +84,17 @@ export class LspClientConnection extends LspClientTransport {
 			},
 			initializationOptions: this.server.initialization,
 		});
+		this.formatter = result.formatter;
+		this.serverVersion = result.serverInfo?.version;
+		this.degradedMode = result.degraded_mode ?? false;
+		if (this.degradedMode) {
+			// Surface degraded state immediately so the agent knows the server may
+			// return incomplete results, rather than discovering this only when calling
+			// lsp_addons or noticing missing features.
+			this.stderrBuffer.push(
+				"[pi-lsp-client] WARNING: RubyLSP started in degraded mode — some features may be unavailable\n",
+			);
+		}
 		await this.sendNotification("initialized");
 		await this.sendNotification("workspace/didChangeConfiguration", {
 			settings: { json: { validate: { enable: true } } },

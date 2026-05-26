@@ -108,6 +108,9 @@ const READ_ONLY_RETRY_TOOLS = new Set([
 	"showSyntaxTree",
 	"workspaceDependencies",
 	"discoverTests",
+	// VS Code RubyLSP extension ports — read-only
+	"relevantFiles",
+	"addons",
 ]);
 
 export async function withLspClient<T>(

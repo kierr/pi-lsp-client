@@ -85,6 +85,15 @@ export class LspInspectorComponent {
 						width,
 					),
 				);
+				if (s.formatter) {
+					lines.push(truncateToWidth(`    ${th.fg("muted", "fmt:  ")}${th.fg("dim", s.formatter)}`, width));
+				}
+				if (s.serverVersion) {
+					lines.push(truncateToWidth(`    ${th.fg("muted", "ver:  ")}${th.fg("dim", s.serverVersion)}`, width));
+				}
+				if (s.degradedMode) {
+					lines.push(truncateToWidth(`    ${th.fg("warning", "\u26A0 degraded mode")}`, width));
+				}
 				lines.push("");
 			}
 		}

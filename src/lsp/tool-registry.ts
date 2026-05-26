@@ -1,5 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
+import { renderAddonsCall, renderAddonsResult } from "./renderers/addons.js";
 import { renderCodeActionsCall, renderCodeActionsResult } from "./renderers/code-actions.js";
 import { renderCodeLensCall, renderCodeLensResult } from "./renderers/code-lens.js";
 import { renderCompletionCall, renderCompletionResult } from "./renderers/completion.js";
@@ -12,6 +13,7 @@ import { renderGotoDefinitionCall, renderGotoDefinitionResult } from "./renderer
 import { renderHoverCall, renderHoverResult } from "./renderers/hover.js";
 import { renderInlayHintsCall, renderInlayHintsResult } from "./renderers/inlay-hints.js";
 import { renderRangeFormattingCall, renderRangeFormattingResult } from "./renderers/range-formatting.js";
+import { renderRelevantFilesCall, renderRelevantFilesResult } from "./renderers/relevant-files.js";
 import {
 	renderPrepareRenameCall,
 	renderPrepareRenameResult,
@@ -28,6 +30,7 @@ import {
 	renderWorkspaceDependenciesCall,
 	renderWorkspaceDependenciesResult,
 } from "./renderers/workspace-dependencies.js";
+import { type LspAddonsDetails, lsp_addons } from "./tools/addons.js";
 import { type LspCodeActionsDetails, lsp_code_actions } from "./tools/code-actions.js";
 import { type LspCodeLensDetails, lsp_code_lens } from "./tools/code-lens.js";
 import { type LspCompletionDetails, lsp_completion } from "./tools/completion.js";
@@ -40,6 +43,7 @@ import { type LspGotoDefinitionDetails, lsp_goto_definition } from "./tools/goto
 import { type LspHoverDetails, lsp_hover } from "./tools/hover.js";
 import { type LspInlayHintsDetails, lsp_inlay_hints } from "./tools/inlay-hints.js";
 import { type LspRangeFormattingDetails, lsp_range_formatting } from "./tools/range-formatting.js";
+import { type LspRelevantFilesDetails, lsp_relevant_files } from "./tools/relevant-files.js";
 import { type LspPrepareRenameDetails, type LspRenameDetails, lsp_prepare_rename, lsp_rename } from "./tools/rename.js";
 import { type LspSemanticTokensDetails, lsp_semantic_tokens } from "./tools/semantic-tokens.js";
 import { type LspShowSyntaxTreeDetails, lsp_show_syntax_tree } from "./tools/show-syntax-tree.js";
@@ -199,5 +203,21 @@ export function registerAllTools(pi: ExtensionAPI): void {
 		renderCall: (args, theme) => renderDiscoverTestsCall(args as never, theme),
 		renderResult: (result, options, theme) =>
 			renderDiscoverTestsResult(result as ResultLike<LspDiscoverTestsDetails>, options, theme),
+	});
+
+	// --- VS Code RubyLSP extension ports (2) ---
+
+	pi.registerTool({
+		...lsp_relevant_files,
+		renderCall: (args, theme) => renderRelevantFilesCall(args as never, theme),
+		renderResult: (result, options, theme) =>
+			renderRelevantFilesResult(result as ResultLike<LspRelevantFilesDetails>, options, theme),
+	});
+
+	pi.registerTool({
+		...lsp_addons,
+		renderCall: (args, theme) => renderAddonsCall(args as never, theme),
+		renderResult: (result, options, theme) =>
+			renderAddonsResult(result as ResultLike<LspAddonsDetails>, options, theme),
 	});
 }

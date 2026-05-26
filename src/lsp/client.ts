@@ -20,6 +20,7 @@ import type {
 	LocationLink,
 	PrepareRenameResult,
 	Range,
+	RubyAddon,
 	RubyDependency,
 	RubyTestItem,
 	SemanticTokens,
@@ -370,5 +371,23 @@ export class LspClient extends LspClientConnection {
 		return this.sendRequest<{ commands: string[] } | null>("rubyLsp/resolveTestCommands", {
 			items,
 		});
+	}
+
+	// ── VS Code RubyLSP extension ports ──────────────────────────────────
+
+	// GoToRelevantFile does Dir.glob — never touches the document store.
+	// No openFile needed; calling it would cost 1000ms for nothing.
+	async relevantFiles(filePath: string): Promise<string[] | null> {
+		const absPath = resolve(filePath);
+		const result = await this.sendRequest<{ locations: string[] } | null>("experimental/goToRelevantFile", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+		});
+		return result?.locations ?? null;
+	}
+
+	// Workspace-level request — no openFile. filePath only used for server
+	// resolution via withLspClient. Same pattern as workspaceDependencies().
+	async addons(): Promise<RubyAddon[] | null> {
+		return this.sendRequest<RubyAddon[] | null>("rubyLsp/workspace/addons", {});
 	}
 }
