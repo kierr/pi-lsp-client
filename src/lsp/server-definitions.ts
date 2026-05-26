@@ -86,6 +86,14 @@ export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
 	"ruby-lsp": {
 		command: ["ruby-lsp"],
 		extensions: [".rb", ".rake", ".gemspec", ".ru", ".erb"],
+		initialization: {
+			enabledFeatures: "all",
+			formatter: "auto",
+			featuresConfiguration: {
+				inlayHint: { enableAll: true },
+				codeLens: { enableTestCodeLens: true },
+			},
+		},
 	},
 	basedpyright: {
 		command: ["basedpyright-langserver", "--stdio"],
