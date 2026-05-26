@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import type { ExtensionAPI, ExtensionContext, ToolResultEvent } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, ExtensionContext, ToolResultEvent } from "@earendil-works/pi-coding-agent";
 
 import { LspInspectorComponent } from "./lsp/inspector.js";
 import { disposeDefaultLspManager, getLspManager } from "./lsp/manager.js";

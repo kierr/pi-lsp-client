@@ -1,4 +1,4 @@
-import type { ExtensionAPI } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import { renderCodeActionsCall, renderCodeActionsResult } from "./renderers/code-actions.js";
 import { renderCodeLensCall, renderCodeLensResult } from "./renderers/code-lens.js";

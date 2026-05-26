@@ -1,5 +1,5 @@
-import type { Theme } from "@mariozechner/pi-coding-agent";
-import { Text } from "@mariozechner/pi-tui";
+import type { Theme } from "@earendil-works/pi-coding-agent";
+import { Text } from "@earendil-works/pi-tui";
 
 import type { LspSymbolsDetails } from "../tools/symbols.js";
 import type { DocumentSymbol, SymbolInfo } from "../types.js";
