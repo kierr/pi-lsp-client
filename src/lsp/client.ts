@@ -5,12 +5,28 @@ import { pathToFileURL } from "node:url";
 import { LspClientConnection } from "./connection.js";
 import { getLanguageId } from "./language-mappings.js";
 import type {
+	CodeAction,
+	CodeLens,
+	Command,
+	CompletionItem,
+	CompletionList,
 	Diagnostic,
+	DocumentLink,
 	DocumentSymbol,
+	FormattingOptions,
+	Hover,
+	InlayHint,
 	Location,
 	LocationLink,
 	PrepareRenameResult,
+	Range,
+	RubyDependency,
+	RubyTestItem,
+	SemanticTokens,
+	SignatureHelp,
 	SymbolInfo,
+	TextEdit,
+	TypeHierarchyItem,
 	WorkspaceEdit,
 } from "./types.js";
 
@@ -91,6 +107,8 @@ export class LspClient extends LspClientConnection {
 			text,
 		});
 	}
+
+	// ── Existing methods ──────────────────────────────────────────────────
 
 	async definition(
 		filePath: string,
@@ -178,6 +196,179 @@ export class LspClient extends LspClientConnection {
 			textDocument: { uri: pathToFileURL(absPath).href },
 			position: { line: line - 1, character },
 			newName,
+		});
+	}
+
+	// ── New LSP methods ──────────────────────────────────────────────────
+
+	async hover(filePath: string, line: number, character: number): Promise<Hover | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<Hover | null>("textDocument/hover", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			position: { line: line - 1, character },
+		});
+	}
+
+	async completion(filePath: string, line: number, character: number): Promise<CompletionList | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<CompletionList | null>("textDocument/completion", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			position: { line: line - 1, character },
+		});
+	}
+
+	async completionResolve(item: CompletionItem): Promise<CompletionItem> {
+		return this.sendRequest<CompletionItem>("completionItem/resolve", item);
+	}
+
+	async signatureHelp(filePath: string, line: number, character: number): Promise<SignatureHelp | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<SignatureHelp | null>("textDocument/signatureHelp", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			position: { line: line - 1, character },
+		});
+	}
+
+	async codeActions(
+		filePath: string,
+		line: number,
+		character: number,
+		range?: { endLine: number; endCharacter: number },
+		only?: string[],
+	): Promise<Array<CodeAction | Command> | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		const rangeParam: Range = range
+			? {
+					start: { line: line - 1, character },
+					end: { line: range.endLine - 1, character: range.endCharacter },
+				}
+			: { start: { line: line - 1, character }, end: { line: line - 1, character } };
+		return this.sendRequest<Array<CodeAction | Command> | null>("textDocument/codeAction", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			range: rangeParam,
+			context: {
+				diagnostics: [],
+				only: only ?? undefined,
+			},
+		});
+	}
+
+	async codeActionResolve(action: CodeAction): Promise<CodeAction> {
+		return this.sendRequest<CodeAction>("codeAction/resolve", action);
+	}
+
+	async formatting(filePath: string, options?: FormattingOptions): Promise<TextEdit[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<TextEdit[] | null>("textDocument/formatting", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			options: options ?? { tabSize: 2, insertSpaces: true },
+		});
+	}
+
+	async rangeFormatting(filePath: string, range: Range, options?: FormattingOptions): Promise<TextEdit[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<TextEdit[] | null>("textDocument/rangeFormatting", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			range,
+			options: options ?? { tabSize: 2, insertSpaces: true },
+		});
+	}
+
+	async documentLink(filePath: string): Promise<DocumentLink[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<DocumentLink[] | null>("textDocument/documentLink", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+		});
+	}
+
+	async codeLens(filePath: string): Promise<CodeLens[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<CodeLens[] | null>("textDocument/codeLens", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+		});
+	}
+
+	async codeLensResolve(lens: CodeLens): Promise<CodeLens> {
+		return this.sendRequest<CodeLens>("codeLens/resolve", lens);
+	}
+
+	async inlayHints(filePath: string, startLine: number, endLine: number): Promise<InlayHint[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<InlayHint[] | null>("textDocument/inlayHint", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			range: {
+				start: { line: startLine - 1, character: 0 },
+				end: { line: endLine - 1, character: 0 },
+			},
+		});
+	}
+
+	async semanticTokensFull(filePath: string): Promise<SemanticTokens | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<SemanticTokens | null>("textDocument/semanticTokens/full", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+		});
+	}
+
+	async prepareTypeHierarchy(filePath: string, line: number, character: number): Promise<TypeHierarchyItem[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<TypeHierarchyItem[] | null>("textDocument/prepareTypeHierarchy", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			position: { line: line - 1, character },
+		});
+	}
+
+	async typeHierarchySupertypes(item: TypeHierarchyItem): Promise<TypeHierarchyItem[] | null> {
+		return this.sendRequest<TypeHierarchyItem[] | null>("typeHierarchy/supertypes", { item });
+	}
+
+	// ── RubyLSP custom methods ──────────────────────────────────────────
+
+	async showSyntaxTree(
+		filePath: string,
+		range?: { startLine: number; startCharacter: number; endLine: number; endCharacter: number },
+	): Promise<{ ast: string } | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<{ ast: string } | null>("rubyLsp/textDocument/showSyntaxTree", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+			...(range
+				? {
+						range: {
+							start: { line: range.startLine - 1, character: range.startCharacter },
+							end: { line: range.endLine - 1, character: range.endCharacter },
+						},
+					}
+				: {}),
+		});
+	}
+
+	async workspaceDependencies(): Promise<RubyDependency[] | null> {
+		return this.sendRequest<RubyDependency[] | null>("rubyLsp/workspace/dependencies", {});
+	}
+
+	async discoverTests(filePath: string): Promise<RubyTestItem[] | null> {
+		const absPath = resolve(filePath);
+		await this.openFile(absPath);
+		return this.sendRequest<RubyTestItem[] | null>("rubyLsp/discoverTests", {
+			textDocument: { uri: pathToFileURL(absPath).href },
+		});
+	}
+
+	async resolveTestCommands(items: Array<{ uri: string; id: string }>): Promise<{ commands: string[] } | null> {
+		return this.sendRequest<{ commands: string[] } | null>("rubyLsp/resolveTestCommands", {
+			items,
 		});
 	}
 }
