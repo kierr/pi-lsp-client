@@ -113,6 +113,23 @@ export const lsp_code_actions = defineTool({
 				} satisfies LspCodeActionsDetails,
 			};
 		} catch (e) {
+			// Handle InvalidLocationError gracefully - this happens when the character position
+			// is beyond the line length, often due to UTF-8/UTF-16 encoding mismatches.
+			if (e instanceof Error && /InvalidLocation|invalid.*location|position.*out of range/i.test(e.message)) {
+				const details: LspCodeActionsDetails = {
+					filePath: params.filePath,
+					line: params.line,
+					character: params.character,
+					actions: [],
+					applied: null,
+					error: `Invalid position (${params.line}:${params.character}). The character offset may exceed the line length. This can occur with multi-byte characters.`,
+				} satisfies LspCodeActionsDetails;
+				return {
+					content: [{ type: "text", text: details.error }],
+					details,
+				};
+			}
+
 			const message = handleMissingDependencyError(e);
 			if (message) {
 				return {

@@ -194,9 +194,10 @@ export async function withSemanticFallback<T>(
 	// Step 1: Try primary server (resolved by extension).
 	const primaryResult = await withLspClient<T>(filePath, fn, toolName, options);
 
-	// Only attempt fallback when primary returned null — not on errors or non-null results.
+	// Only attempt fallback when primary returned null or undefined.
 	// `null` is the LSP convention for "I don't handle this request".
-	if (primaryResult !== null) return primaryResult;
+	// Empty arrays/objects mean "searched, found nothing" — different from delegation.
+	if (primaryResult != null) return primaryResult;
 
 	// Step 2: Look up companion for the primary server.
 	const lookup = findServerForExtension(ext);
@@ -211,8 +212,10 @@ export async function withSemanticFallback<T>(
 			...options,
 			serverOverride: companion,
 		});
-	} catch {
-		// Companion failed (not installed, crashed, etc.) — return primary's null.
+	} catch (err) {
+		// Log fallback failures — silent failures make issues untraceable.
+		const errMsg = err instanceof Error ? err.message : String(err);
+		console.error(`[lsp] Companion fallback failed for ${toolName}: ${errMsg}`);
 		return primaryResult;
 	}
 }

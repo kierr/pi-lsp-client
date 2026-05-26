@@ -31,9 +31,7 @@ import type {
 	WorkspaceEdit,
 } from "./types.js";
 
-const POST_OPEN_DELAY_MS = 1000;
-const POST_DIAGNOSTICS_WAIT_MS = 500;
-const MAX_DIAGNOSTIC_PULL_ERRORS = 50;
+import { POST_DIAGNOSTICS_WAIT_MS, POST_OPEN_DELAY_MS, MAX_DIAGNOSTIC_PULL_ERRORS } from "./constants.js";
 
 export class LspClient extends LspClientConnection {
 	private readonly openedFiles = new Set<string>();
@@ -152,7 +150,8 @@ export class LspClient extends LspClientConnection {
 	private isUnsupportedDiagnosticPullError(error: unknown): boolean {
 		if (!(error instanceof Error)) return false;
 		const code = "code" in error && typeof error.code === "number" ? error.code : undefined;
-		if (code === -32601) return true;
+		if (code === -32601) return true; // Method not found in LSP
+		// Ruby LSP doesn't support textDocument/diagnostic pull - it only pushes via notification.
 		return /unsupported|not supported|method not found|unknown request/i.test(error.message);
 	}
 
@@ -160,13 +159,16 @@ export class LspClient extends LspClientConnection {
 		const absPath = resolve(filePath);
 		const uri = pathToFileURL(absPath).href;
 		await this.openFile(absPath);
+		// Ruby LSP publishes diagnostics asynchronously via notification.
+		// Wait longer to allow RuboCop/Sorbet to analyze and publish.
 		await new Promise((r) => setTimeout(r, POST_DIAGNOSTICS_WAIT_MS));
 
+		// Try pull model first (some servers support it), but expect it to fail for ruby-lsp.
 		try {
 			const result = await this.sendRequest<{ items?: Diagnostic[] }>("textDocument/diagnostic", {
 				textDocument: { uri },
 			});
-			if (result.items) {
+			if (result.items?.length) {
 				return { items: result.items };
 			}
 		} catch (error) {
@@ -178,6 +180,8 @@ export class LspClient extends LspClientConnection {
 			}
 		}
 
+		// Fall back to stored diagnostics from publishDiagnostics notifications.
+		// This is the primary mechanism for ruby-lsp.
 		return { items: this.getStoredDiagnostics(uri) };
 	}
 
