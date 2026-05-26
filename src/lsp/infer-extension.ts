@@ -1,9 +1,9 @@
 import { lstatSync, readdirSync } from "node:fs";
 import { extname, join } from "node:path";
 
+import { SKIP_DIRECTORIES } from "./constants.js";
 import { EXT_TO_LANG } from "./language-mappings.js";
 
-const SKIP_DIRECTORIES = new Set(["node_modules", ".git", "dist", "build", ".next", "out"]);
 const MAX_SCAN_ENTRIES = 500;
 
 export function inferExtensionFromDirectory(directory: string): string | null {

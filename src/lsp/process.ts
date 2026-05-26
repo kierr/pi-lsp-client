@@ -101,6 +101,9 @@ export function spawnProcess(command: string[], options: SpawnOptions): SpawnedP
 		env: options.env as NodeJS.ProcessEnv,
 		stdio: ["pipe", "pipe", "pipe"],
 		windowsHide: true,
+		// shell: true is required on Windows to spawn .cmd/.bat executables
+		// (e.g., npm-installed language servers). Command validation in config-loader
+		// (Array.isArray guard) prevents string injection from .pi/lsp-client.json.
 		shell: process.platform === "win32",
 		detached: process.platform !== "win32",
 	});

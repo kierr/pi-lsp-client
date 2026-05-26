@@ -5,7 +5,15 @@ export function getAdditionalPathBases(workingDirectory: string): string[] {
 	return [join(workingDirectory, "node_modules", ".bin")];
 }
 
-export function isServerInstalled(command: string[]): boolean {
+/**
+ * Check whether the first element of a command array is findable on PATH.
+ *
+ * @param command The command array (e.g., ["typescript-language-server", "--stdio"]).
+ * @param workspaceRoot The workspace root directory. When supplied, node_modules/.bin
+ *   inside the workspace is also searched. Falls back to process.cwd() for callers
+ *   that don't have a workspace root available.
+ */
+export function isServerInstalled(command: string[], workspaceRoot?: string): boolean {
 	if (command.length === 0) return false;
 
 	const [cmd] = command;
@@ -43,10 +51,19 @@ export function isServerInstalled(command: string[]): boolean {
 		}
 	}
 
-	for (const base of getAdditionalPathBases(process.cwd())) {
-		for (const suffix of exts) {
-			if (existsSync(join(base, cmd + suffix))) {
-				return true;
+	// Search node_modules/.bin in both the workspace root and cwd.
+	// transport.ts adds workspaceRoot's node_modules/.bin to PATH when spawning,
+	// so the install check must search the same location.
+	const searchRoots = workspaceRoot ? [workspaceRoot] : [];
+	const cwd = process.cwd();
+	if (!searchRoots.includes(cwd)) searchRoots.push(cwd);
+
+	for (const root of searchRoots) {
+		for (const base of getAdditionalPathBases(root)) {
+			for (const suffix of exts) {
+				if (existsSync(join(base, cmd + suffix))) {
+					return true;
+				}
 			}
 		}
 	}

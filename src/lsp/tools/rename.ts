@@ -1,7 +1,7 @@
 import { defineTool } from "@mariozechner/pi-coding-agent";
 import { Type } from "typebox";
 
-import { withLspClient } from "../client-wrapper.js";
+import { findWorkspaceRoot, withLspClient } from "../client-wrapper.js";
 import { formatApplyResult, formatPrepareRenameResult } from "../formatters.js";
 import type { PrepareRenameResult, WorkspaceEdit } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
@@ -99,7 +99,7 @@ export const lsp_rename = defineTool({
 				signal === undefined ? {} : { signal },
 			);
 
-			const apply = applyWorkspaceEdit(edit);
+			const apply = applyWorkspaceEdit(edit, findWorkspaceRoot(params.filePath));
 			const text = formatApplyResult(apply);
 			return {
 				content: [{ type: "text", text }],

@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
@@ -19,6 +19,43 @@ interface ConfigJson {
 }
 
 type ConfigSource = "project" | "user";
+
+// ── Config cache ──────────────────────────────────────────────────────
+// getMergedServers() is on the hotpath for every tool call. Without caching,
+// it reads two JSON files from disk on every invocation. We cache the merged
+// result and invalidate when config file mtimes change.
+let cachedServers: ServerWithSource[] | null = null;
+let cacheMtimes: { project: number | null; user: number | null } = { project: null, user: null };
+
+function getMtimes(): { project: number | null; user: number | null } {
+	const paths = getConfigPaths();
+	let project: number | null = null;
+	let user: number | null = null;
+	try {
+		if (existsSync(paths.project)) project = statSync(paths.project).mtimeMs;
+	} catch {
+		/* empty */
+	}
+	try {
+		if (existsSync(paths.user)) user = statSync(paths.user).mtimeMs;
+	} catch {
+		/* empty */
+	}
+	return { project, user };
+}
+
+function isCacheValid(): boolean {
+	if (!cachedServers) return false;
+	const current = getMtimes();
+	return current.project === cacheMtimes.project && current.user === cacheMtimes.user;
+}
+
+/** Invalidate the config cache. Call after modifying config files. */
+export function invalidateConfigCache(): void {
+	cachedServers = null;
+	cacheMtimes = { project: null, user: null };
+}
+// ── End config cache ──────────────────────────────────────────────────
 
 export interface ServerWithSource extends ResolvedServer {
 	source: "project" | "user" | "builtin";
@@ -55,6 +92,8 @@ export function loadAllConfigs(): Map<ConfigSource, ConfigJson> {
 }
 
 export function getMergedServers(): ServerWithSource[] {
+	if (isCacheValid() && cachedServers) return cachedServers;
+
 	const configs = loadAllConfigs();
 	const servers: ServerWithSource[] = [];
 	const disabled = new Set<string>();
@@ -73,7 +112,10 @@ export function getMergedServers(): ServerWithSource[] {
 			}
 
 			if (seen.has(id)) continue;
-			if (!entry.command || !entry.extensions) continue;
+			// Validate shape: command and extensions must be arrays, not strings or other types.
+			// Without this guard, a string "command": "evil" passes truthiness but crashes
+			// later in spawnProcess when destructured as const [cmd, ...args] = command.
+			if (!Array.isArray(entry.command) || !Array.isArray(entry.extensions)) continue;
 
 			servers.push({
 				id,
@@ -96,11 +138,15 @@ export function getMergedServers(): ServerWithSource[] {
 			command: config.command,
 			extensions: config.extensions,
 			priority: -100,
+			// Spread env and initialization so builtin servers that define these fields
+			// (e.g., ruby-lsp with initializationOptions) don't silently lose them.
+			...(config.env !== undefined ? { env: config.env } : {}),
+			...(config.initialization !== undefined ? { initialization: config.initialization } : {}),
 			source: "builtin",
 		});
 	}
 
-	return servers.sort((a, b) => {
+	const sorted = servers.sort((a, b) => {
 		if (a.source !== b.source) {
 			const order: Record<"project" | "user" | "builtin", number> = {
 				project: 0,
@@ -111,6 +157,10 @@ export function getMergedServers(): ServerWithSource[] {
 		}
 		return b.priority - a.priority;
 	});
+
+	cachedServers = sorted;
+	cacheMtimes = getMtimes();
+	return sorted;
 }
 
 export function getDisabledServerIds(): Set<string> {

@@ -47,7 +47,7 @@ export const lsp_diagnostics = defineTool({
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 		try {
 			const absPath = resolve(params.filePath);
-			const severity = params.severity as SeverityFilter | undefined;
+			const severity = params.severity;
 
 			if (isDirectoryPath(absPath)) {
 				const extension = inferExtensionFromDirectory(absPath);
@@ -128,7 +128,7 @@ export const lsp_diagnostics = defineTool({
 			if (message) {
 				const details: LspDiagnosticsDetails = {
 					filePath: params.filePath,
-					severity: (params.severity as SeverityFilter | undefined) ?? "all",
+					severity: params.severity ?? "all",
 					mode: "file",
 					diagnostics: [],
 					totalDiagnostics: 0,

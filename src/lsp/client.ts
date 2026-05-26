@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { extname, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -16,11 +16,14 @@ import type {
 
 const POST_OPEN_DELAY_MS = 1000;
 const POST_DIAGNOSTICS_WAIT_MS = 500;
+const MAX_DIAGNOSTIC_PULL_ERRORS = 50;
 
 export class LspClient extends LspClientConnection {
 	private readonly openedFiles = new Set<string>();
 	private readonly documentVersions = new Map<string, number>();
 	private readonly lastSyncedText = new Map<string, string>();
+	// Cache file mtimes to skip re-reading unchanged files on subsequent openFile calls.
+	private readonly lastSyncedMtime = new Map<string, number>();
 	private readonly diagnosticPullErrors: Error[] = [];
 
 	getDiagnosticPullErrors(): readonly Error[] {
@@ -30,9 +33,9 @@ export class LspClient extends LspClientConnection {
 	async openFile(filePath: string): Promise<void> {
 		const absPath = resolve(filePath);
 		const uri = pathToFileURL(absPath).href;
-		const text = readFileSync(absPath, "utf-8");
 
 		if (!this.openedFiles.has(absPath)) {
+			const text = readFileSync(absPath, "utf-8");
 			const ext = extname(absPath);
 			const languageId = getLanguageId(ext);
 			const version = 1;
@@ -49,10 +52,26 @@ export class LspClient extends LspClientConnection {
 			this.openedFiles.add(absPath);
 			this.documentVersions.set(uri, version);
 			this.lastSyncedText.set(uri, text);
+			// Cache mtime to avoid re-reading the file if it hasn't changed.
+			try {
+				this.lastSyncedMtime.set(uri, statSync(absPath).mtimeMs);
+			} catch {
+				/* empty */
+			}
 			await new Promise((r) => setTimeout(r, POST_OPEN_DELAY_MS));
 			return;
 		}
 
+		// Already-opened file: check mtime before re-reading to avoid unnecessary I/O.
+		try {
+			const currentMtime = statSync(absPath).mtimeMs;
+			if (this.lastSyncedMtime.get(uri) === currentMtime) return;
+			this.lastSyncedMtime.set(uri, currentMtime);
+		} catch {
+			/* empty */
+		}
+
+		const text = readFileSync(absPath, "utf-8");
 		const prevText = this.lastSyncedText.get(uri);
 		if (prevText === text) {
 			return;
@@ -133,7 +152,10 @@ export class LspClient extends LspClientConnection {
 			}
 		} catch (error) {
 			if (!this.isUnsupportedDiagnosticPullError(error)) {
-				this.diagnosticPullErrors.push(error instanceof Error ? error : new Error(String(error)));
+				// Cap to prevent unbounded growth over long sessions.
+				if (this.diagnosticPullErrors.length < MAX_DIAGNOSTIC_PULL_ERRORS) {
+					this.diagnosticPullErrors.push(error instanceof Error ? error : new Error(String(error)));
+				}
 			}
 		}
 

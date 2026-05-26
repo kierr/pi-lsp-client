@@ -1,14 +1,12 @@
 import { existsSync, lstatSync, readdirSync, type Stats } from "node:fs";
 import { extname, join, resolve } from "node:path";
 import { findWorkspaceRoot, formatServerLookupError } from "./client-wrapper.js";
-import { DEFAULT_MAX_DIAGNOSTICS, DEFAULT_MAX_DIRECTORY_FILES } from "./constants.js";
+import { DEFAULT_MAX_DIAGNOSTICS, DEFAULT_MAX_DIRECTORY_FILES, SKIP_DIRECTORIES } from "./constants.js";
 import { LspInvalidPathError, LspServerLookupError } from "./errors.js";
 import { filterDiagnosticsBySeverity, formatDiagnostic } from "./formatters.js";
 import { getLspManager } from "./manager.js";
 import { findServerForExtension } from "./server-resolution.js";
 import type { Diagnostic, SeverityFilter } from "./types.js";
-
-const SKIP_DIRECTORIES = new Set(["node_modules", ".git", "dist", "build", ".next", "out"]);
 
 interface FileDiagnostic {
 	filePath: string;

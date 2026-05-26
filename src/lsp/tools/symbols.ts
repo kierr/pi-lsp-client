@@ -40,7 +40,7 @@ export const lsp_symbols = defineTool({
 		"Use scope='document' for a file outline, scope='workspace' for project-wide symbol search.",
 	parameters: Params,
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
-		const scope = params.scope as "document" | "workspace";
+		const scope = params.scope;
 		try {
 			if (scope === "workspace") {
 				if (!params.query) {

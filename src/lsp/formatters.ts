@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 
-import { SEVERITY_MAP, SYMBOL_KIND_MAP } from "./language-mappings.js";
+import { SEVERITY_MAP, SEVERITY_VALUE_BY_NAME, SYMBOL_KIND_MAP } from "./language-mappings.js";
 import type {
 	Diagnostic,
 	DocumentSymbol,
@@ -75,14 +75,7 @@ export function filterDiagnosticsBySeverity(diagnostics: Diagnostic[], severityF
 		return diagnostics;
 	}
 
-	const severityMap: Record<string, number> = {
-		error: 1,
-		warning: 2,
-		information: 3,
-		hint: 4,
-	};
-
-	const targetSeverity = severityMap[severityFilter];
+	const targetSeverity = SEVERITY_VALUE_BY_NAME[severityFilter];
 	if (targetSeverity === undefined) return diagnostics;
 	return diagnostics.filter((d) => d.severity === targetSeverity);
 }

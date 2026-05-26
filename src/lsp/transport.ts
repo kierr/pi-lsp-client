@@ -15,9 +15,16 @@ import type { Diagnostic, ResolvedServer } from "./types.js";
 export class LspClientTransport {
 	protected proc: SpawnedProcess | null = null;
 	protected connection: MessageConnection | null = null;
+	// Capped at 100 entries by count, with a total byte budget to prevent
+	// unbounded memory growth from verbose servers.
 	protected readonly stderrBuffer: string[] = [];
+	protected stderrByteSize = 0;
+	protected static readonly STDERR_MAX_ENTRIES = 100;
+	protected static readonly STDERR_MAX_BYTES = 64 * 1024; // 64KB
 	protected processExited = false;
+	// Capped at 1000 entries to prevent unbounded memory growth over long sessions.
 	protected readonly diagnosticsStore = new Map<string, Diagnostic[]>();
+	protected static readonly DIAGNOSTICS_STORE_MAX_ENTRIES = 1000;
 
 	constructor(
 		protected readonly root: string,
@@ -67,6 +74,15 @@ export class LspClientTransport {
 			(params: { uri?: string; diagnostics?: Diagnostic[] }) => {
 				if (params.uri) {
 					this.diagnosticsStore.set(params.uri, params.diagnostics ?? []);
+					// Evict oldest entries if the store grows too large.
+					if (this.diagnosticsStore.size > LspClientTransport.DIAGNOSTICS_STORE_MAX_ENTRIES) {
+						const keysIter = this.diagnosticsStore.keys();
+						const toDelete = this.diagnosticsStore.size - LspClientTransport.DIAGNOSTICS_STORE_MAX_ENTRIES;
+						for (let i = 0; i < toDelete; i++) {
+							const key = keysIter.next().value;
+							if (key !== undefined) this.diagnosticsStore.delete(key);
+						}
+					}
 				}
 			},
 		);
@@ -96,8 +112,15 @@ export class LspClientTransport {
 		this.proc.stderr.setEncoding("utf-8");
 		this.proc.stderr.on("data", (chunk: string) => {
 			this.stderrBuffer.push(chunk);
-			if (this.stderrBuffer.length > 100) {
-				this.stderrBuffer.shift();
+			this.stderrByteSize += chunk.length;
+			// Evict oldest entries until within both entry and byte budgets.
+			while (
+				(this.stderrBuffer.length > LspClientTransport.STDERR_MAX_ENTRIES ||
+					this.stderrByteSize > LspClientTransport.STDERR_MAX_BYTES) &&
+				this.stderrBuffer.length > 0
+			) {
+				const removed = this.stderrBuffer.shift();
+				if (removed) this.stderrByteSize -= removed.length;
 			}
 		});
 	}

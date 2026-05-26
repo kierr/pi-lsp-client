@@ -1,3 +1,6 @@
+/** Directories to skip during recursive directory walks (diagnostics, extension inference). */
+export const SKIP_DIRECTORIES = new Set(["node_modules", ".git", "dist", "build", ".next", "out"]);
+
 export const DEFAULT_MAX_REFERENCES = 200;
 export const DEFAULT_MAX_SYMBOLS = 200;
 export const DEFAULT_MAX_DIAGNOSTICS = 200;

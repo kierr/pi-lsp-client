@@ -110,8 +110,12 @@ export class LspManager {
 		};
 	}
 
+	// Null byte is invalid in file paths on all platforms, making it a safe delimiter.
+	// Using :: was fragile — paths containing :: would corrupt key parsing.
+	private static readonly KEY_SEP = "\0";
+
 	private getKey(root: string, serverId: string): string {
-		return `${root}::${serverId}`;
+		return `${root}${LspManager.KEY_SEP}${serverId}`;
 	}
 
 	private reapStale(): void {
@@ -311,7 +315,9 @@ export class LspManager {
 	getSnapshot(): ClientSnapshot[] {
 		const snapshots: ClientSnapshot[] = [];
 		for (const [key, managed] of this.clients) {
-			const [root, serverId] = key.split("::") as [string, string];
+			const sepIndex = key.indexOf(LspManager.KEY_SEP);
+			const root = sepIndex >= 0 ? key.slice(0, sepIndex) : key;
+			const serverId = sepIndex >= 0 ? key.slice(sepIndex + 1) : "";
 			snapshots.push({
 				root,
 				serverId,

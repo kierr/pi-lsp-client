@@ -113,6 +113,8 @@ export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
 	"bash-ls": {
 		command: ["bash-language-server", "start"],
 		extensions: [".sh", ".bash", ".zsh", ".ksh"],
+		// Alias for "bash" — kept for backward compat. Install hint and auto-install
+		// recipe are shared with the "bash" entry.
 	},
 	jdtls: { command: ["jdtls"], extensions: [".java"] },
 	"yaml-ls": { command: ["yaml-language-server", "--stdio"], extensions: [".yaml", ".yml"] },
@@ -120,6 +122,7 @@ export const BUILTIN_SERVERS: Record<string, Omit<LspServerConfig, "id">> = {
 	php: { command: ["intelephense", "--stdio"], extensions: [".php"] },
 	dart: { command: ["dart", "language-server", "--lsp"], extensions: [".dart"] },
 	terraform: { command: ["terraform-ls", "serve"], extensions: [".tf", ".tfvars"] },
+	// "terraform-ls" is the canonical entry. "terraform" kept as alias for backward compat.
 	"terraform-ls": { command: ["terraform-ls", "serve"], extensions: [".tf", ".tfvars"] },
 	prisma: { command: ["prisma", "language-server"], extensions: [".prisma"] },
 	"ocaml-lsp": { command: ["ocamllsp"], extensions: [".ml", ".mli"] },

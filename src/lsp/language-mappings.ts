@@ -34,6 +34,14 @@ export const SEVERITY_MAP: Record<number, string> = {
 	4: "hint",
 };
 
+/** Reverse mapping: severity name → numeric value. Used by filterDiagnosticsBySeverity. */
+export const SEVERITY_VALUE_BY_NAME: Record<string, number> = {
+	error: 1,
+	warning: 2,
+	information: 3,
+	hint: 4,
+};
+
 export const EXT_TO_LANG: Record<string, string> = {
 	".abap": "abap",
 	".bat": "bat",
