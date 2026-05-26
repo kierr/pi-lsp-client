@@ -21,7 +21,8 @@ import {
 	renderRenameResult,
 	renderSymbolsCall,
 	renderSymbolsResult,
-} from "./lsp/renderers.js";
+} from "./lsp/renderers/index.js";
+import type { ResultLike } from "./lsp/renderers/shared.js";
 import { AUTO_INSTALLABLE_SERVERS, BUILTIN_SERVERS, LSP_INSTALL_HINTS } from "./lsp/server-definitions.js";
 import { getAllServers } from "./lsp/server-resolution.js";
 import { type LspDiagnosticsDetails, lsp_diagnostics } from "./lsp/tools/diagnostics.js";
@@ -36,11 +37,6 @@ import {
 import { type LspSymbolsDetails, lsp_symbols } from "./lsp/tools/symbols.js";
 
 const STATUS_KEY = "pi-lsp";
-
-interface ResultLike<T> {
-	content: ReadonlyArray<{ type: string; text?: string }>;
-	details?: T;
-}
 
 export interface PostEditToolResultHandlerResult {
 	content?: ToolResultEvent["content"];
