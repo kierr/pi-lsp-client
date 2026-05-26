@@ -13,10 +13,10 @@ import { lsp_document_links } from "../../src/lsp/tools/document-link.js";
 
 const mockedWithLspClient = vi.mocked(withLspClient);
 
-
-// biome-ignore lint/style/noNonNullAssertion: test assertions on known-non-null arrays
-function getContentText(result: { content: Array<{ type: string; text: string }> }): string {
-	return result.content[0].text;
+// Helper to extract text content from tool results without non-null assertions.
+function getContentText(result: { content: Array<{ type?: string; text?: string }> }): string {
+	const item = result.content[0];
+	return (item as { type: string; text: string }).text;
 }
 
 const FAKE_LINKS = [

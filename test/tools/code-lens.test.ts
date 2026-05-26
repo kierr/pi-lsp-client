@@ -13,10 +13,10 @@ import { lsp_code_lens } from "../../src/lsp/tools/code-lens.js";
 
 const mockedWithLspClient = vi.mocked(withLspClient);
 
-
-// biome-ignore lint/style/noNonNullAssertion: test assertions on known-non-null arrays
-function getContentText(result: { content: Array<{ type: string; text: string }> }): string {
-	return result.content[0].text;
+// Helper to extract text content from tool results without non-null assertions.
+function getContentText(result: { content: Array<{ type?: string; text?: string }> }): string {
+	const item = result.content[0];
+	return (item as { type: string; text: string }).text;
 }
 
 const FAKE_LENSES = [
@@ -71,15 +71,12 @@ describe("lsp_code_lens", () => {
 		// First call: fetch code lenses
 		mockedWithLspClient.mockResolvedValueOnce(FAKE_LENSES);
 		// Second call: resolve each lens — the callback iterates lenses and calls client.codeLensResolve
-		mockedWithLspClient.mockImplementationOnce(
-			// biome-ignore lint/suspicious/noExplicitAny: mock callback needs loose typing
-			async (_filePath: any, fn: (client: any) => Promise<any>) => {
-				const fakeClient = {
-					codeLensResolve: vi.fn().mockResolvedValue(RESOLVED_LENSES[0]),
-				};
-				return fn(fakeClient);
-			},
-		);
+		mockedWithLspClient.mockImplementationOnce(async (_filePath: any, fn: (client: any) => Promise<any>) => {
+			const fakeClient = {
+				codeLensResolve: vi.fn().mockResolvedValue(RESOLVED_LENSES[0]),
+			};
+			return fn(fakeClient);
+		});
 
 		const result = await lsp_code_lens.execute(
 			"call-2",
