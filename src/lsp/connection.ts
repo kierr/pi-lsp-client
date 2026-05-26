@@ -24,6 +24,26 @@ export class LspClientConnection extends LspClientTransport {
 						prepareSupportDefaultBehavior: 1,
 						honorsChangeAnnotations: true,
 					},
+					completion: {
+						completionItem: {
+							snippetSupport: false,
+							resolveSupport: {
+								properties: ["documentation", "detail", "additionalTextEdits"],
+							},
+						},
+					},
+					signatureHelp: {
+						signatureInformation: { documentationFormat: ["markdown", "plaintext"] },
+					},
+					documentLink: { tooltipSupport: true },
+					codeLens: {},
+					inlayHint: {
+						resolveSupport: { properties: ["tooltip", "textEdits", "label"] },
+					},
+					formatting: {},
+					rangeFormatting: {},
+					semanticTokens: { full: true, delta: false, range: false },
+					typeHierarchy: {},
 					codeAction: {
 						codeActionLiteralSupport: {
 							codeActionKind: {
