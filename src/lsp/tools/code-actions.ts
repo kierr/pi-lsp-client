@@ -125,7 +125,7 @@ export const lsp_code_actions = defineTool({
 					error: `Invalid position (${params.line}:${params.character}). The character offset may exceed the line length. This can occur with multi-byte characters.`,
 				} satisfies LspCodeActionsDetails;
 				return {
-					content: [{ type: "text", text: details.error }],
+					content: [{ type: "text", text: details.error ?? "Unknown error" }],
 					details,
 				};
 			}

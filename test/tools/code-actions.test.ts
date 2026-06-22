@@ -4,12 +4,16 @@ import { withLspClient } from "../../src/lsp/client-wrapper.js";
 import type { LspCodeActionsDetails } from "../../src/lsp/tools/code-actions.js";
 import { lsp_code_actions } from "../../src/lsp/tools/code-actions.js";
 
-vi.mock("../../src/lsp/client-wrapper.js", () => ({
-	withLspClient: vi.fn(),
-	findWorkspaceRoot: vi.fn().mockReturnValue("/fake/workspace"),
-	isDirectoryPath: vi.fn().mockReturnValue(false),
-	formatServerLookupError: vi.fn().mockReturnValue("lookup error"),
-}));
+vi.mock("../../src/lsp/client-wrapper.js", () => {
+	const mockWithClient = vi.fn();
+	return {
+		withLspClient: mockWithClient,
+		withSemanticFallback: mockWithClient,
+		findWorkspaceRoot: vi.fn().mockReturnValue("/fake/workspace"),
+		isDirectoryPath: vi.fn().mockReturnValue(false),
+		formatServerLookupError: vi.fn().mockReturnValue("lookup error"),
+	};
+});
 
 vi.mock("../../src/lsp/workspace-edit.js", () => ({
 	applyWorkspaceEdit: vi

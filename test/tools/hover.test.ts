@@ -4,12 +4,16 @@ import { withLspClient } from "../../src/lsp/client-wrapper.js";
 import type { LspHoverDetails } from "../../src/lsp/tools/hover.js";
 import { lsp_hover } from "../../src/lsp/tools/hover.js";
 
-vi.mock("../../src/lsp/client-wrapper.js", () => ({
-	withLspClient: vi.fn(),
-	findWorkspaceRoot: vi.fn().mockReturnValue("/fake/workspace"),
-	isDirectoryPath: vi.fn().mockReturnValue(false),
-	formatServerLookupError: vi.fn().mockReturnValue("lookup error"),
-}));
+vi.mock("../../src/lsp/client-wrapper.js", () => {
+	const mockWithClient = vi.fn();
+	return {
+		withLspClient: mockWithClient,
+		withSemanticFallback: mockWithClient,
+		findWorkspaceRoot: vi.fn().mockReturnValue("/fake/workspace"),
+		isDirectoryPath: vi.fn().mockReturnValue(false),
+		formatServerLookupError: vi.fn().mockReturnValue("lookup error"),
+	};
+});
 
 const mockedWithLspClient = vi.mocked(withLspClient);
 

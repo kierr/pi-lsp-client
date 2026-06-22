@@ -1,4 +1,4 @@
-import type { ExtensionContext, ToolResultEvent } from "@mariozechner/pi-coding-agent";
+import type { ExtensionContext, ToolResultEvent } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { type PostEditToolResultHandler, registerPostEditDiagnosticsHook } from "../src/index.js";

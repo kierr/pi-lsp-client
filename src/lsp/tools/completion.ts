@@ -1,7 +1,7 @@
 import { defineTool } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { withSemanticFallback } from "../client-wrapper.js";
+import { withLspClient, withSemanticFallback } from "../client-wrapper.js";
 import type { CompletionItem, CompletionList } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
 

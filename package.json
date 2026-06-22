@@ -21,7 +21,7 @@
 	],
 	"pi": {
 		"extensions": [
-			"./src/index.ts"
+			"./dist/index.js"
 		]
 	},
 	"scripts": {
@@ -31,7 +31,10 @@
 		"typecheck": "tsgo --noEmit",
 		"lint": "biome check .",
 		"lint:fix": "biome check --write .",
-		"check": "tsgo --noEmit && biome check ."
+		"check": "tsgo --noEmit && biome check .",
+		"build": "tsc --project tsconfig.build.json",
+		"build:watch": "tsc --project tsconfig.build.json --watch",
+		"prepare": "npm run build"
 	},
 	"peerDependencies": {
 		"@earendil-works/pi-ai": "0.75.5",
@@ -52,5 +55,9 @@
 	},
 	"engines": {
 		"node": ">=20.0.0"
-	}
+	},
+	"files": [
+		"dist",
+		"src"
+	]
 }
