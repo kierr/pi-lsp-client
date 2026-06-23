@@ -45,7 +45,10 @@ export class LspClientTransport {
 			...this.server.env,
 		};
 		const pathValue = process.platform === "win32" ? (env["PATH"] ?? env["Path"] ?? "") : (env["PATH"] ?? "");
-		const spawnPath = [pathValue, ...getAdditionalPathBases(this.root)].filter(Boolean).join(delimiter);
+		// Prepend node_modules/.bin so project-local binaries take precedence over
+		// global installs (e.g. biome 2.x in node_modules vs 0.x in ~/.bun/bin).
+		// This matches npm-script PATH behavior.
+		const spawnPath = [...getAdditionalPathBases(this.root), pathValue].filter(Boolean).join(delimiter);
 		if (process.platform === "win32" && env["Path"] !== undefined) {
 			env["Path"] = spawnPath;
 		}

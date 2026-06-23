@@ -41,19 +41,9 @@ export function isServerInstalled(command: string[], workspaceRoot?: string): bo
 		pathEnv = process.env["Path"] ?? "";
 	}
 
-	const paths = pathEnv.split(delimiter);
-
-	for (const p of paths) {
-		for (const suffix of exts) {
-			if (existsSync(join(p, cmd + suffix))) {
-				return true;
-			}
-		}
-	}
-
-	// Search node_modules/.bin in both the workspace root and cwd.
-	// transport.ts adds workspaceRoot's node_modules/.bin to PATH when spawning,
-	// so the install check must search the same location.
+	// Search node_modules/.bin FIRST (project-local binaries take precedence),
+	// then fall back to system PATH. This must match the PATH order used by
+	// transport.ts when spawning — which prepends node_modules/.bin.
 	const searchRoots = workspaceRoot ? [workspaceRoot] : [];
 	const cwd = process.cwd();
 	if (!searchRoots.includes(cwd)) searchRoots.push(cwd);
@@ -64,6 +54,16 @@ export function isServerInstalled(command: string[], workspaceRoot?: string): bo
 				if (existsSync(join(base, cmd + suffix))) {
 					return true;
 				}
+			}
+		}
+	}
+
+	const paths = pathEnv.split(delimiter);
+
+	for (const p of paths) {
+		for (const suffix of exts) {
+			if (existsSync(join(p, cmd + suffix))) {
+				return true;
 			}
 		}
 	}
