@@ -5,6 +5,13 @@ export type DiagnosticsRunner = (filePath: string) => Promise<string>;
 const MUTATION_TOOL_NAMES = new Set(["write", "edit", "apply_patch"]);
 const CLEAN_DIAGNOSTICS_TEXT = "No diagnostics found";
 const UNSUPPORTED_EXTENSION_TEXT = "No LSP server configured for extension:";
+// A server that is configured for the extension but whose binary is not on PATH
+// (see client-wrapper.ts formatServerLookupError). This is a config gap, not a
+// code error in the file the agent just wrote — surfacing it as "LSP errors
+// detected, please fix" invites the agent to chase a phantom code problem (or
+// `pip install` the server) instead of the user's actual task. Treat it as
+// clean in the post-edit block so it stays out of the model's context. (#31)
+const SERVER_NOT_INSTALLED_MARKER = "is configured but NOT INSTALLED";
 export const POST_EDIT_DIAGNOSTICS_WIDGET_KEY = "pi-lsp";
 
 type WidgetPlacement = "aboveEditor" | "belowEditor";
@@ -56,7 +63,8 @@ function isCleanPostEditDiagnostics(diagnostics: string): boolean {
 	return (
 		diagnostics.length === 0 ||
 		diagnostics === CLEAN_DIAGNOSTICS_TEXT ||
-		diagnostics.startsWith(UNSUPPORTED_EXTENSION_TEXT)
+		diagnostics.startsWith(UNSUPPORTED_EXTENSION_TEXT) ||
+		diagnostics.includes(SERVER_NOT_INSTALLED_MARKER)
 	);
 }
 

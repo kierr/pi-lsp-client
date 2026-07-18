@@ -124,6 +124,29 @@ describe("post-edit diagnostics", () => {
 		expect(result).toEqual({ widgetLines: undefined });
 	});
 
+	it("#given post-edit diagnostics for an uninstalled configured server #when appending #then treats it as clean (#31)", async () => {
+		// given — a .py write where the configured Python server (basedpyright)
+		// is not installed. The diagnostics runner returns the not-installed
+		// block from client-wrapper.ts formatServerLookupError. This is a config
+		// gap, not a code error in the file just written.
+		const event = writeEvent("/tmp/scratch.py");
+
+		// when
+		const result = await appendPostEditDiagnostics(event, async () =>
+			[
+				"LSP server 'basedpyright' is configured but NOT INSTALLED.",
+				"",
+				"Command not found: basedpyright-langserver",
+				"",
+				"To install:",
+				"  pip install basedpyright",
+			].join("\n"),
+		);
+
+		// then — treated as clean: no "LSP errors detected" block.
+		expect(result).toEqual({ widgetLines: undefined });
+	});
+
 	it("#given apply_patch result with multiple files #when appending post-edit diagnostics #then adds one block per file with diagnostics", async () => {
 		// given
 		const event = applyPatchEvent(["src/a.ts", "src/b.ts"]);
