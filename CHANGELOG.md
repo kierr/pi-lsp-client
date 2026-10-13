@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `lsp_find_references` excludes locations inside `node_modules`.
+  Language servers (notably typescript-language-server via tsserver)
+  index resolved imports, so an unfiltered response buries workspace
+  references in dependency noise. Locations whose URI cannot be parsed
+  are kept: unclassifiable is not provably noise.
+
 ### Added
 
 - Initial release porting omo's LSP tool stack as a pi-coding-agent extension.

@@ -3,8 +3,8 @@ import { Type } from "typebox";
 
 import { withLspClient } from "../client-wrapper.js";
 import { DEFAULT_MAX_REFERENCES } from "../constants.js";
-import { formatLocation } from "../formatters.js";
-import type { Location } from "../types.js";
+import { formatLocation, uriToPath } from "../formatters.js";
+import type { Location, LocationLink } from "../types.js";
 import { handleMissingDependencyError } from "../utils.js";
 
 const Params = Type.Object({
@@ -25,10 +25,27 @@ export interface LspFindReferencesDetails {
 	errorKind?: "missing_dependency";
 }
 
+/**
+ * True when a reference points inside a dependency tree. Language servers
+ * (notably typescript-language-server via tsserver) index resolved imports,
+ * so an unfiltered response buries workspace references in node_modules
+ * noise. URIs that fail to parse are kept: an unclassifiable location is
+ * not provably noise.
+ */
+export function isDependencyReference(loc: Location | LocationLink): boolean {
+	let path: string;
+	try {
+		path = uriToPath("targetUri" in loc ? loc.targetUri : loc.uri);
+	} catch {
+		return false;
+	}
+	return path.split(/[/\\]/).includes("node_modules");
+}
+
 export const lsp_find_references = defineTool({
 	name: "lsp_find_references",
 	label: "LSP Find References",
-	description: "Find ALL usages/references of a symbol across the entire workspace.",
+	description: "Find ALL usages/references of a symbol across the workspace source (node_modules excluded).",
 	parameters: Params,
 	async execute(_toolCallId, params, signal, _onUpdate, _ctx) {
 		try {
@@ -40,7 +57,7 @@ export const lsp_find_references = defineTool({
 				signal === undefined ? {} : { signal },
 			);
 
-			const all = Array.isArray(result) ? result : [];
+			const all = (Array.isArray(result) ? result : []).filter((loc) => !isDependencyReference(loc));
 			const total = all.length;
 			const truncated = total > DEFAULT_MAX_REFERENCES;
 			const limited = truncated ? all.slice(0, DEFAULT_MAX_REFERENCES) : all;
